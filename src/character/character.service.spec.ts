@@ -6,9 +6,9 @@ import { UserEntity } from '../user/user.entity';
 import { FavoriteCharacterEntity } from './favorite-character.entity';
 import { IPerson } from './dto/person';
 import { IPeople } from './dto/people';
-import { AxiosResponse } from 'axios';
-import { Observable } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
+import { createObservable } from '../test-utils/character-observable';
+import { CharacterDto } from './dto/character.dto';
 
 describe(CharacterService.name, () => {
   const person: IPerson = {
@@ -48,21 +48,8 @@ describe(CharacterService.name, () => {
     results: [person],
   };
 
-  const axiosResponse: AxiosResponse<IPeople, any> = {
-    data: people,
-    status: 200,
-    statusText: '',
-    headers: {},
-    config: { url: '', headers: null },
-  };
-
-  const observable = new Observable((observer) => {
-    setTimeout(() => {
-      observer.next(axiosResponse);
-    }, 300);
-  });
-
   let characterService: CharacterService;
+  let userService: UserService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -71,7 +58,12 @@ describe(CharacterService.name, () => {
         UserService,
         {
           provide: HttpService,
-          useValue: { get: jest.fn().mockReturnValue(observable) },
+          useValue: {
+            get: jest.fn().mockImplementation((url: string) => {
+              if (url.includes('search')) return createObservable(people);
+              else return createObservable(person);
+            }),
+          },
         },
       ],
       imports: [
@@ -80,12 +72,30 @@ describe(CharacterService.name, () => {
     }).compile();
 
     characterService = module.get<CharacterService>(CharacterService);
+    userService = module.get<UserService>(UserService);
   });
 
-  it('teste', async () => {
-    const value = await characterService.findByName('luke');
-    console.log(value);
+  it(`#${CharacterService.prototype.findByName.name} should return an array of ${CharacterDto.name}`, async () => {
+    const character = await characterService.findByName('luke');
 
-    expect(value).toBeTruthy();
+    expect(character.length).toEqual(1);
+    expect(character[0].name).toEqual('Luke Skywalker');
+  });
+
+  it(`#${CharacterService.prototype.getFavorites.name} should return favorite characters`, async () => {
+    const user = await userService.create({
+      name: 'Elto Oliveira',
+      login: 'elto',
+      email: 'elto@mail.com',
+      password: '12345',
+    });
+
+    await characterService.markCharacterAsFavorite({
+      characteId: 1,
+      userId: user.id,
+    });
+    const favorites = await characterService.getFavorites(user.id);
+
+    expect(favorites.length).toEqual(1);
   });
 });
