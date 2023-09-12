@@ -14,16 +14,18 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async findAll(): Promise<UserDataDto[]> {
-    const users = await this.userRepository.find();
+  async findById(id: string): Promise<UserDataDto> {
+    const user = await this.userRepository.findOneBy({ id });
 
-    return users.map((user) => {
-      return {
-        id: user.id,
-        name: user.name,
-        login: user.login,
-      };
-    });
+    return {
+      id: user.id,
+      name: user.name,
+      login: user.login,
+    };
+  }
+
+  async getUserEntityById(id: string): Promise<UserEntity> {
+    return await this.userRepository.findOneBy({ id });
   }
 
   async create(userCreate: UserCreateDto): Promise<UserDataDto> {

@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Param, Post, Put } from '@nestjs/common';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserDataDto } from './dto/user-data.dto';
 import { UserService } from './user.service';
@@ -17,11 +9,6 @@ import { ApiTags } from '@nestjs/swagger';
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  @Get()
-  async findAll(): Promise<UserDataDto[]> {
-    return await this.userService.findAll();
-  }
 
   @Post()
   async create(@Body() user: UserCreateDto): Promise<UserDataDto> {

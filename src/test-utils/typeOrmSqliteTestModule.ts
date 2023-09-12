@@ -1,14 +1,16 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-export function typeOrmSqliteTestModule(c: Function) {
+export function typeOrmSqliteTestModuleTest(...c: Function[]) {
   return [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: ':memory:',
       dropSchema: true,
       synchronize: true,
-      entities: [c],
+      entities: [...c],
+      migrations: [...c],
+      migrationsTableName: 'custom_migration_name',
     }),
-    TypeOrmModule.forFeature([c]),
+    TypeOrmModule.forFeature([...c]),
   ];
 }

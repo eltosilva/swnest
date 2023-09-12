@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
-import { typeOrmSqliteTestModule } from '../test-utils/typeOrmSqliteTestModule';
+import { typeOrmSqliteTestModuleTest } from '../test-utils/typeOrmSqliteTestModule';
 import { UserEntity } from './user.entity';
 import { UserDataDto } from './dto/user-data.dto';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserUpdateDto } from './dto/use-update.dto';
+import { FavoriteCharacterEntity } from '../character/favorite-character.entity';
 
 describe(UserService.name, () => {
   let userService: UserService;
@@ -12,7 +13,9 @@ describe(UserService.name, () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [...typeOrmSqliteTestModule(UserEntity)],
+      imports: [
+        ...typeOrmSqliteTestModuleTest(UserEntity, FavoriteCharacterEntity),
+      ],
       providers: [UserService],
     }).compile();
 
