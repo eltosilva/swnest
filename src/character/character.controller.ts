@@ -3,15 +3,23 @@ import {
   Controller,
   Delete,
   Get,
-  Param,
   Post,
   Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { CharacterService } from './character.service';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { FavoriteDto } from './dto/favorite.dto';
 import { CharacterDto } from './dto/character.dto';
+import { AuthGuard } from 'src/auth/auth.guard';
 
+@ApiSecurity('token')
 @ApiTags('characters')
 @Controller('characters')
 export class CharacterController {
@@ -22,9 +30,17 @@ export class CharacterController {
     return await this.characterService.findByName(name);
   }
 
-  @Get('favorites/:userId')
-  async getFavorites(@Param('userId') userId: string) {
-    return this.characterService.getFavorites(userId);
+  @ApiBearerAuth()
+  @ApiHeader({
+    name: 'auth-token',
+    required: true,
+    example: 'Bearer jwt-tokens',
+  })
+  @UseGuards(AuthGuard)
+  @Get('favorites')
+  async getFavorites(@Request() request: Request) {
+    const payload = request['user'];
+    return this.characterService.getFavorites(payload?.sub);
   }
 
   @Post()

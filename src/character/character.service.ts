@@ -1,7 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
-import { catchError, firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
+import { firstValueFrom } from 'rxjs';
 import { IPeople } from './dto/people';
 import { FavoriteDto } from './dto/favorite.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +9,7 @@ import { Repository } from 'typeorm';
 import { UserService } from '../user/user.service';
 import { CharacterDto } from './dto/character.dto';
 import { IPerson } from './dto/person';
+import { UserEntity } from 'src/user/user.entity';
 
 @Injectable()
 export class CharacterService {
@@ -20,8 +20,9 @@ export class CharacterService {
   constructor(
     @InjectRepository(FavoriteCharacterEntity)
     private readonly favoriteRepository: Repository<FavoriteCharacterEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
     private readonly httpService: HttpService,
-    private readonly userService: UserService,
   ) {}
 
   async findByName(name: string): Promise<CharacterDto[]> {
@@ -33,7 +34,7 @@ export class CharacterService {
   }
 
   async getFavorites(userId: string) {
-    const user = await this.userService.findById(userId);
+    const user = await this.userRepository.findOneBy({ id: userId });
     const favorites = await this.favoriteRepository.findBy({ user });
 
     const people = await Promise.all(
@@ -52,27 +53,27 @@ export class CharacterService {
   }
 
   async markCharacterAsFavorite(favorite: FavoriteDto): Promise<FavoriteDto> {
-    const user = await this.userService.getUserEntityById(favorite.userId);
+    const user = await this.userRepository.findOneBy({ id: favorite.userId });
 
     let favoriteCharacter: FavoriteCharacterEntity = {
       user,
-      characterId: favorite.characteId,
+      characterId: favorite.characterId,
     };
 
     favoriteCharacter = await this.favoriteRepository.save(favoriteCharacter);
 
     return {
-      characteId: favoriteCharacter.characterId,
+      characterId: favoriteCharacter.characterId,
       userId: favoriteCharacter.user.id,
     };
   }
 
   async ummarkCharacterAsFavorite(favorite: FavoriteDto) {
-    const user = await this.userService.getUserEntityById(favorite.userId);
+    const user = await this.userRepository.findOneBy({ id: favorite.userId });
 
     const favoriteCharacter: FavoriteCharacterEntity = {
       user,
-      characterId: favorite.characteId,
+      characterId: favorite.characterId,
     };
 
     this.favoriteRepository.delete(favoriteCharacter);

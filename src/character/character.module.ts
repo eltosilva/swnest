@@ -5,13 +5,14 @@ import { CharacterController } from './character.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FavoriteCharacterEntity } from './favorite-character.entity';
 
-import { UserModule } from 'src/user/user.module';
+import { UserEntity } from 'src/user/user.entity';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
     HttpModule,
-    TypeOrmModule.forFeature([FavoriteCharacterEntity]),
-    UserModule,
+    TypeOrmModule.forFeature([FavoriteCharacterEntity, UserEntity]),
+    AuthModule,
   ],
   providers: [CharacterService],
   controllers: [CharacterController],

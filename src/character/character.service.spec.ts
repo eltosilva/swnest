@@ -91,7 +91,7 @@ describe(CharacterService.name, () => {
     });
 
     await characterService.markCharacterAsFavorite({
-      characteId: 1,
+      characterId: 1,
       userId: user.id,
     });
     const favorites = await characterService.getFavorites(user.id);

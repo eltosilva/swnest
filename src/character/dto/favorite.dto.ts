@@ -1,4 +1,8 @@
+import { IsNotEmpty, IsPositive } from 'class-validator';
+
 export class FavoriteDto {
-  characteId: number;
+  @IsPositive()
+  characterId: number;
+  @IsNotEmpty()
   userId: string;
 }

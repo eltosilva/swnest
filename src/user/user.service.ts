@@ -24,10 +24,6 @@ export class UserService {
     };
   }
 
-  async getUserEntityById(id: string): Promise<UserEntity> {
-    return await this.userRepository.findOneBy({ id });
-  }
-
   async create(userCreate: UserCreateDto): Promise<UserDataDto> {
     const userEntity: UserEntity = new UserEntity();
     userEntity.name = userCreate.name;
