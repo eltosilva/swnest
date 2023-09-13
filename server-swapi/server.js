@@ -7,11 +7,6 @@ const middlewares = jsonServer.defaults()
 
 server.use(middlewares)
 
-server.get('/x', (req, res) => {
-  res.locals
-
-})
-
 router.render = async (req, res) => {
 
   const { search } = req.query

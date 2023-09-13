@@ -14,6 +14,7 @@ import { IPerson } from './dto/person';
 @Injectable()
 export class CharacterService {
   private readonly baseUrl = 'https://swapi.dev/api/people';
+  // private readonly baseUrl = 'http://localhost:3003/people';
   private readonly logger = new Logger(CharacterService.name);
 
   constructor(
