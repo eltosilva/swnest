@@ -3,9 +3,27 @@ import { IPerson } from './person';
 const REGEX = /\d+/g;
 
 export class CharacterDto {
+  id: number;
+  isFavorite: boolean;
+  name: string;
+  image: string;
+  birth_year: string;
+  eye_color: string;
+  gender: string;
+  hair_color: string;
+  height: number;
+  mass: number;
+  skin_color: string;
+  homeworld: string;
+  films: string[];
+  species: string[];
+  starships: string[];
+  vehicles: string[];
+
   constructor(person: IPerson) {
     this.id = parseInt(person.url.match(REGEX)[0]);
     this.name = person.name;
+    this.isFavorite = false;
     this.image = this.changeToImageAddress(person.url, 'characters');
     this.birth_year = person.birth_year;
     this.eye_color = person.eye_color;
@@ -28,22 +46,6 @@ export class CharacterDto {
       this.changeToImageAddress(vehicle, 'vehicles'),
     );
   }
-
-  id: number;
-  name: string;
-  image: string;
-  birth_year: string;
-  eye_color: string;
-  gender: string;
-  hair_color: string;
-  height: number;
-  mass: number;
-  skin_color: string;
-  homeworld: string;
-  films: string[];
-  species: string[];
-  starships: string[];
-  vehicles: string[];
 
   private changeToImageAddress(url: string, group: string): string {
     const sufixRegex = /\d+/g;

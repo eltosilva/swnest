@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { Payload } from './payload';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,7 @@ export class AuthService {
 
     if (user?.password !== login.password) throw new UnauthorizedException();
 
-    const payload = { username: user.login, sub: user.id };
+    const payload: Payload = { username: user.login, sub: user.id };
 
     return {
       access_token: await this.jwtService.signAsync(payload),

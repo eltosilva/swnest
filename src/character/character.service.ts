@@ -2,11 +2,10 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { IPeople } from './dto/people';
-import { FavoriteDto } from './dto/favorite.dto';
+import { FavoriteDto, FavoriteStatusDto } from './dto/favorite.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FavoriteCharacterEntity } from './favorite-character.entity';
 import { Repository } from 'typeorm';
-import { UserService } from '../user/user.service';
 import { CharacterDto } from './dto/character.dto';
 import { IPerson } from './dto/person';
 import { UserEntity } from 'src/user/user.entity';
@@ -14,7 +13,7 @@ import { UserEntity } from 'src/user/user.entity';
 @Injectable()
 export class CharacterService {
   private readonly baseUrl = 'https://swapi.dev/api/people';
-  // private readonly baseUrl = 'http://localhost:3003/people';
+  //private readonly baseUrl = 'http://localhost:3003/people?id=';
   private readonly logger = new Logger(CharacterService.name);
 
   constructor(
@@ -25,12 +24,26 @@ export class CharacterService {
     private readonly httpService: HttpService,
   ) {}
 
-  async findByName(name: string): Promise<CharacterDto[]> {
+  async findByName(name: string, userId: string): Promise<CharacterDto[]> {
     const { data } = await firstValueFrom(
       this.httpService.get<IPeople>(`${this.baseUrl}?search=${name}`),
     );
 
-    return data.results.map((person) => new CharacterDto(person));
+    const characters = data.results.map((person) => new CharacterDto(person));
+    characters[0].eye_color = userId;
+    if (userId) {
+      const user = await this.userRepository.findOneBy({ id: userId });
+      const charactersEntity = await this.favoriteRepository.findBy({ user });
+
+      characters.forEach(
+        (character) =>
+          (character.isFavorite = charactersEntity.some(
+            (ce) => ce.characterId === character.id,
+          )),
+      );
+    }
+
+    return characters;
   }
 
   async getFavorites(userId: string) {
@@ -49,33 +62,29 @@ export class CharacterService {
       }),
     );
 
-    return people.map((person) => new CharacterDto(person));
+    return people.map((person) => {
+      const character = new CharacterDto(person);
+      character.isFavorite = true;
+
+      return character;
+    });
   }
 
-  async markCharacterAsFavorite(favorite: FavoriteDto): Promise<FavoriteDto> {
-    const user = await this.userRepository.findOneBy({ id: favorite.userId });
-
-    let favoriteCharacter: FavoriteCharacterEntity = {
-      user,
-      characterId: favorite.characterId,
+  async changeFavoriteStatus(
+    userId: string,
+    characterId: number,
+    status: FavoriteStatusDto,
+  ): Promise<FavoriteDto> {
+    const favorite: FavoriteCharacterEntity = {
+      user: await this.userRepository.findOneBy({ id: userId }),
+      characterId,
     };
-
-    favoriteCharacter = await this.favoriteRepository.save(favoriteCharacter);
+    if (status.isFavorite) await this.favoriteRepository.save(favorite);
+    else await this.favoriteRepository.delete(favorite);
 
     return {
-      characterId: favoriteCharacter.characterId,
-      userId: favoriteCharacter.user.id,
+      userId,
+      characterId,
     };
-  }
-
-  async ummarkCharacterAsFavorite(favorite: FavoriteDto) {
-    const user = await this.userRepository.findOneBy({ id: favorite.userId });
-
-    const favoriteCharacter: FavoriteCharacterEntity = {
-      user,
-      characterId: favorite.characterId,
-    };
-
-    this.favoriteRepository.delete(favoriteCharacter);
   }
 }

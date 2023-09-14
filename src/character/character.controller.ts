@@ -1,9 +1,9 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
-  Post,
+  Param,
+  Put,
   Query,
   Request,
   UseGuards,
@@ -12,24 +12,32 @@ import { CharacterService } from './character.service';
 import {
   ApiBearerAuth,
   ApiHeader,
+  ApiParam,
+  ApiQuery,
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import { FavoriteDto } from './dto/favorite.dto';
+import { FavoriteStatusDto } from './dto/favorite.dto';
 import { CharacterDto } from './dto/character.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { Request as RequestExpress } from 'express';
+import { Payload } from 'src/auth/payload';
 
-@ApiSecurity('token')
 @ApiTags('characters')
 @Controller('characters')
 export class CharacterController {
   constructor(private readonly characterService: CharacterService) {}
 
+  @ApiQuery({ name: 'userId', required: false })
   @Get()
-  async findByName(@Query('name') name: string): Promise<CharacterDto[]> {
-    return await this.characterService.findByName(name);
+  async findByName(
+    @Query('name') name: string,
+    @Query('userId') userId: string,
+  ): Promise<CharacterDto[]> {
+    return await this.characterService.findByName(name, userId);
   }
 
+  @ApiSecurity('token')
   @ApiBearerAuth()
   @ApiHeader({
     name: 'auth-token',
@@ -38,20 +46,31 @@ export class CharacterController {
   })
   @UseGuards(AuthGuard)
   @Get('favorites')
-  async getFavorites(@Request() request: Request) {
-    const payload = request['user'];
+  async getFavorites(@Request() request: RequestExpress) {
+    const payload: Payload = request['user'];
     return this.characterService.getFavorites(payload?.sub);
   }
 
-  @Post()
-  async markCharacterAsFavorite(
-    @Body() favorite: FavoriteDto,
-  ): Promise<FavoriteDto> {
-    return this.characterService.markCharacterAsFavorite(favorite);
-  }
+  @ApiSecurity('token')
+  @ApiBearerAuth()
+  @ApiHeader({
+    name: 'auth-token',
+    required: true,
+    example: 'Bearer jwt-tokens',
+  })
+  @Put(':id')
+  @UseGuards(AuthGuard)
+  async changeFavoriteStatus(
+    @Request() request,
+    @Param('id') characterId: number,
+    @Body() status: FavoriteStatusDto,
+  ) {
+    const { user } = request;
 
-  @Delete()
-  async unmarkCharacterAsFavorite(@Body() favorite: FavoriteDto) {
-    this.characterService.ummarkCharacterAsFavorite(favorite);
+    return await this.characterService.changeFavoriteStatus(
+      user?.sub,
+      characterId,
+      status,
+    );
   }
 }
