@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { IPeople } from './dto/people';
 import { FavoriteDto, FavoriteStatusDto } from './dto/favorite.dto';
@@ -13,7 +13,7 @@ import { UserEntity } from 'src/user/user.entity';
 @Injectable()
 export class CharacterService {
   private readonly baseUrl = 'https://swapi.dev/api/people';
-  //private readonly baseUrl = 'http://localhost:3003/people?id=';
+  //private readonly baseUrl = 'http://localhost:3003/people';
   private readonly logger = new Logger(CharacterService.name);
 
   constructor(
@@ -24,30 +24,40 @@ export class CharacterService {
     private readonly httpService: HttpService,
   ) {}
 
-  async findByName(name: string, userId: string): Promise<CharacterDto[]> {
-    const { data } = await firstValueFrom(
-      this.httpService.get<IPeople>(`${this.baseUrl}?search=${name}`),
-    );
-
-    const characters = data.results.map((person) => new CharacterDto(person));
-    characters[0].eye_color = userId;
-    if (userId) {
-      const user = await this.userRepository.findOneBy({ id: userId });
-      const charactersEntity = await this.favoriteRepository.findBy({ user });
-
-      characters.forEach(
-        (character) =>
-          (character.isFavorite = charactersEntity.some(
-            (ce) => ce.characterId === character.id,
-          )),
+  async searchByName(name: string): Promise<CharacterDto[]> {
+    let people: IPeople;
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.get<IPeople>(`${this.baseUrl}?search=${name}`),
       );
+
+      people = data;
+    } catch (erro) {
+      throw new HttpException(erro.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    return people.results.map((person) => new CharacterDto(person));
+  }
+
+  async searchByNameIdentifyingFavorites(userId: string, name: string) {
+    const characters = await this.searchByName(name);
+
+    const user = await this.userRepository.findOneBy({ id: userId });
+    const charactersEntity = await this.favoriteRepository.findBy({ user });
+
+    characters.forEach(
+      (character) =>
+        (character.isFavorite = charactersEntity.some(
+          (ce) => ce.characterId === character.id,
+        )),
+    );
 
     return characters;
   }
 
   async getFavorites(userId: string) {
     const user = await this.userRepository.findOneBy({ id: userId });
+
     const favorites = await this.favoriteRepository.findBy({ user });
 
     const people = await Promise.all(

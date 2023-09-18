@@ -7,7 +7,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 require('dotenv').config({ path: '.env.develop' });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: console,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -42,4 +44,5 @@ async function bootstrap() {
   app.enableCors();
   await app.listen(process.env.PORT);
 }
+
 bootstrap();

@@ -2,21 +2,19 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UserModule } from './user/user.module';
-import { SqliteConfigService } from './configations/sqlite.config.service';
 import { CharacterModule } from './character/character.module';
 import { AuthModule } from './auth/auth.module';
+import { MySqlConfigService } from './configations/mysql.config.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forRootAsync({
-      useClass: SqliteConfigService,
-      inject: [SqliteConfigService],
-    }),
     UserModule,
     CharacterModule,
     AuthModule,
+    TypeOrmModule.forRootAsync({
+      inject: [MySqlConfigService],
+      useClass: MySqlConfigService,
+    }),
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

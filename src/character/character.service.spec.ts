@@ -75,8 +75,8 @@ describe(CharacterService.name, () => {
     userService = module.get<UserService>(UserService);
   });
 
-  it(`#${CharacterService.prototype.findByName.name} should return an array of ${CharacterDto.name}`, async () => {
-    const character = await characterService.findByName('luke');
+  it(`#${CharacterService.prototype.searchByName.name} should return an array of ${CharacterDto.name}`, async () => {
+    const character = await characterService.searchByName('luke');
 
     expect(character.length).toEqual(1);
     expect(character[0].name).toEqual('Luke Skywalker');

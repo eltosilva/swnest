@@ -5,6 +5,7 @@ import { UserEntity } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Payload } from './payload';
+import { TokenDto } from './dto/token.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,15 +15,18 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async signIn(login: LoginDto) {
+  async signIn(login: LoginDto): Promise<TokenDto> {
     const user = await this.userRepository.findOneBy({ email: login.email });
 
-    if (user?.password !== login.password) throw new UnauthorizedException();
+    if (user?.password !== login.password)
+      throw new UnauthorizedException('Senha inválida');
 
     const payload: Payload = { username: user.login, sub: user.id };
 
     return {
       access_token: await this.jwtService.signAsync(payload),
+      userId: user.id,
+      login: user.login,
     };
   }
 }
