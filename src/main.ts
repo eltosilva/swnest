@@ -26,17 +26,17 @@ async function bootstrap() {
     .setDescription('My favorite Star Wars characters')
     .setVersion('1.0')
     .addTag('star wars')
-    .addBearerAuth(
-      {
-        type: 'http',
-        in: 'header',
-        bearerFormat: 'JWT',
-        scheme: 'bearer',
-        name: 'auth-token',
-      },
-      'token',
-    )
     .build();
+  // .addBearerAuth(
+  //   {
+  //     type: 'http',
+  //     in: 'header',
+  //     bearerFormat: 'JWT',
+  //     scheme: 'bearer',
+  //     name: 'Autorization',
+  //   },
+  //   'token',
+  // )
 
   const document = SwaggerModule.createDocument(app, configSwagger);
   SwaggerModule.setup('docs', app, document);

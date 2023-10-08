@@ -41,7 +41,7 @@ export class AuthGuard implements CanActivate {
 
   private extractTokenFromHeader(request: Request): string | undefined {
     const authorization =
-      request.headers.authorization || request.get('autorization');
+      request.headers.authorization ?? request.get('autorization');
 
     //console.log(request.headers.);
     const [type, token] = authorization.split(' ');

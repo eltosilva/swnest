@@ -8,12 +8,13 @@ import { FavoriteCharacterEntity } from './favorite-character.entity';
 import { Repository } from 'typeorm';
 import { CharacterDto } from './dto/character.dto';
 import { IPerson } from './dto/person';
-import { UserEntity } from 'src/user/user.entity';
+import { UserEntity } from '../user/user.entity';
+import { AxiosResponse } from 'axios';
 
 @Injectable()
 export class CharacterService {
   private readonly baseUrl = 'https://swapi.dev/api/people';
-  //private readonly baseUrl = 'http://localhost:3003/people';
+  // private readonly baseUrl = 'http://localhost:3003/people';
   private readonly logger = new Logger(CharacterService.name);
 
   constructor(
@@ -27,7 +28,7 @@ export class CharacterService {
   async searchByName(name: string): Promise<CharacterDto[]> {
     let people: IPeople;
     try {
-      const { data } = await firstValueFrom(
+      const { data } = await firstValueFrom<AxiosResponse>(
         this.httpService.get<IPeople>(`${this.baseUrl}?search=${name}`),
       );
 
@@ -36,7 +37,56 @@ export class CharacterService {
       throw new HttpException(erro.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    return people.results.map((person) => new CharacterDto(person));
+    return people.results.map((person) => this.mapPersonToCharacter(person));
+  }
+
+  private mapPersonToCharacter(person: IPerson): CharacterDto {
+    const regex = /\d+/;
+    const id = parseInt(person.url.match(regex).join(''));
+
+    return {
+      urlBase: 'https://starwars-visualguide.com/assets/img',
+      id,
+      name: person.name,
+      isFavorite: false,
+      birth_year: person.birth_year,
+      eye_color: person.eye_color,
+      gender: person.gender,
+      hair_color: person.hair_color,
+      height: parseInt(person.height),
+      image: {
+        path: 'characters',
+        files: `${id}.jpg`,
+      },
+      films: {
+        path: 'films',
+        files: person.films.map((film) => film.match(regex).join('') + '.jpg'),
+      },
+      homeworld: {
+        path: 'planets',
+        files: person.homeworld.match(regex).join('') + '.jpg',
+      },
+      mass: parseFloat(person.mass),
+      skin_color: person.skin_color,
+      species: {
+        path: 'species',
+        files: person.species.map(
+          (specie) => specie.match(regex).join('') + '.jpg',
+        ),
+      },
+      starships: {
+        path: 'starships',
+        files: person.starships.map(
+          (ship) => ship.match(regex).join('') + '.jpg',
+        ),
+      },
+      vehicles: {
+        path: 'vehicles',
+        files: person.vehicles.map(
+          (vehicle) => vehicle.match(regex).join('') + '.jpg',
+        ),
+      },
+    };
   }
 
   async searchByNameIdentifyingFavorites(userId: string, name: string) {
@@ -73,7 +123,7 @@ export class CharacterService {
     );
 
     return people.map((person) => {
-      const character = new CharacterDto(person);
+      const character = this.mapPersonToCharacter(person);
       character.isFavorite = true;
 
       return character;
@@ -89,12 +139,17 @@ export class CharacterService {
       user: await this.userRepository.findOneBy({ id: userId }),
       characterId,
     };
-    if (status.isFavorite) await this.favoriteRepository.save(favorite);
+
+    let favoriteSave: FavoriteCharacterEntity;
+    if (status.isFavorite)
+      favoriteSave = await this.favoriteRepository.save(favorite);
     else await this.favoriteRepository.delete(favorite);
 
+    if (!favoriteSave) return;
+
     return {
-      userId,
-      characterId,
+      characterId: favoriteSave.characterId,
+      userId: favoriteSave.user.id,
     };
   }
 }
