@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { UserCreateDto } from './dto/user-create.dto';
 import { UserDataDto } from './dto/user-data.dto';
 import { UserEntity } from './user.entity';
-import { UserUpdateDto } from './dto/use-update.dto';
+import { UserExistsDto } from './dto/user-exists.dto';
 
 @Injectable()
 export class UserService {
@@ -14,48 +14,25 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async findById(id: string): Promise<UserDataDto> {
-    const user = await this.userRepository.findOneBy({ id });
-
-    return {
-      id: user.id,
-      name: user.name,
-      login: user.login,
-    };
-  }
-
   async create(userCreate: UserCreateDto): Promise<UserDataDto> {
-    const userEntity: UserEntity = new UserEntity();
-    userEntity.name = userCreate.name;
-    userEntity.login = userCreate.login;
-    userEntity.email = userCreate.email;
-    userEntity.password = userCreate.password;
+    const userEntity: UserEntity = UserEntity.of(userCreate);
 
-    const newUserEntity = await this.userRepository.save(userEntity);
-
-    return {
-      id: newUserEntity.id,
-      name: newUserEntity.name,
-      login: newUserEntity.login,
-    };
+    return UserDataDto.of(await this.userRepository.save(userEntity));
   }
 
-  async update(id: string, userUpdate: UserUpdateDto): Promise<UserDataDto> {
-    const userEntity = await this.userRepository.findOneBy({ id });
+  async exists(email: string, login: string): Promise<UserExistsDto> {
+    const existsDto = new UserExistsDto();
 
-    Object.keys(userUpdate).forEach(
-      (key) => (userEntity[key] = userUpdate[key]),
-    );
+    if (email) {
+      const user = await this.userRepository.findOneBy({ email });
+      existsDto.email = !!user;
+    }
 
-    const updateUserEntity = await this.userRepository.save(userEntity);
-    return {
-      id: updateUserEntity.id,
-      name: updateUserEntity.name,
-      login: updateUserEntity.login,
-    };
-  }
+    if (login) {
+      const user = await this.userRepository.findOneBy({ login });
+      existsDto.login = !!user;
+    }
 
-  async delete(id: string) {
-    await this.userRepository.delete({ id });
+    return existsDto;
   }
 }

@@ -6,6 +6,7 @@ import {
   PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { UserCreateDto } from './dto/user-create.dto';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -43,4 +44,14 @@ export class UserEntity {
     { cascade: true, eager: true },
   )
   favoriteCharacters: FavoriteCharacterEntity[];
+
+  static of(userDto: UserCreateDto): UserEntity {
+    const user = new UserEntity();
+    user.name = userDto.name;
+    user.email = userDto.email;
+    user.login = userDto.login;
+    user.password = userDto.password;
+
+    return user;
+  }
 }
